@@ -1,2 +1,2 @@
 # Operating-systems
-Git repo for grouå labs and assignments in operating systems course
+Git repo for group labs and assignments in operating systems course
