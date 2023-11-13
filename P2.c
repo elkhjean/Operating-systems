@@ -1,7 +1,5 @@
-#include <fcntl.h>
-#include <sys/stat.h>
 #include <mqueue.h>
-#include <sys/types.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -63,16 +61,29 @@ int main()
         }
         fread(fileBuffer, 1, MAX_MSG_SIZE, file); // Read up to MAX_MSG_SIZE bytes from file into fileBuffer 1 byte at a time
         fclose(file);
-        mq_send(mqd, fileBuffer, MAX_MSG_SIZE, 0); // Send up to MAX_MSG_SIZE number of bytes from buffer with prio 0 to the queue mqd
+        int send = mq_send(mqd, fileBuffer, MAX_MSG_SIZE, 0); // Send up to MAX_MSG_SIZE number of bytes from buffer with prio 0 to the queue mqd
+        if (send < 0)
+        {
+            perror("Error sending message");
+            exit(1);
+        }
+        mq_close(mqd);
         return 0;
     }
 
     else if (pid > 0)
     { /* parent process */
 
-        mq_receive(mqd, msgBuffer, MAX_MSG_SIZE, NULL);
+        wait(NULL);
+        int rcv = mq_receive(mqd, msgBuffer, MAX_MSG_SIZE, NULL);
+        if (rcv < 0)
+        {
+            perror("Error receiving message");
+            exit(1);
+        }
         printf("%d\n", countWords(msgBuffer));
         mq_close(mqd);
+        mq_unlink(Q_NAME);
         return 0;
     }
 }
