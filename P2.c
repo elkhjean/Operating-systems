@@ -5,11 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_MSG_SIZE 100 // Max size of a messages to be enqueued
-#define MAX_NUM_MSG 10   // Max number of messages allowed on the queue
-#define Q_NAME "/mymq"   // Name of message queue
-#define MQ_MODE 0644     // Read and write permission for owner, read for rest
-#define FILE_NAME "msgfile.txt"
+#define MAX_MSG_SIZE 1000 // Max size of a messages to be enqueued
+#define MAX_NUM_MSG 10    // Max number of messages allowed on the queue
+#define Q_NAME "/mymq"    // Name of message queue
+#define MQ_MODE 0644      // Read and write permission for owner, read for rest
 
 int countWords(char *str)
 {
@@ -17,7 +16,7 @@ int countWords(char *str)
     int inWord = 0; // 0 means currently in a whitespace, 1 means in a word
     while (*str)
     {
-        if (*str == ' ') // Detects whitespace
+        if (*str == ' ' || *str == '\n' || *str == '\t' || *str == '\r') // Detects whitespace
         {
             inWord = 0;
         }
@@ -31,16 +30,16 @@ int countWords(char *str)
     return wordCount;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    char *file_name = argv[1];
     mqd_t mqd;
     struct mq_attr attr;
     attr.mq_maxmsg = MAX_NUM_MSG;
     attr.mq_msgsize = MAX_MSG_SIZE;
-    char fileBuffer[MAX_MSG_SIZE];
-    char msgBuffer[MAX_MSG_SIZE];
-
-    mqd = mq_open(Q_NAME, O_RDWR | O_CREAT, MQ_MODE, &attr);
+    char buf[MAX_MSG_SIZE];
+  
+//    mqd = mq_open(Q_NAME, O_RDWR | O_CREAT, MQ_MODE, &attr);
 
     pid_t pid;
     pid = fork();
@@ -53,15 +52,18 @@ int main()
     else if (pid == 0)
     { /* child process */
 
-        FILE *file = fopen(FILE_NAME, "r"); // Opens file in reading mode
+        mqd = mq_open(Q_NAME, O_WRONLY | O_CREAT, MQ_MODE, &attr);
+
+        FILE *file = fopen(file_name, "r"); // Opens file in reading mode
         if (file == NULL)
         {
             perror("Error opening file");
             exit(1);
         }
-        fread(fileBuffer, 1, MAX_MSG_SIZE, file); // Read up to MAX_MSG_SIZE bytes from file into fileBuffer 1 byte at a time
+        fread(buf, 1, MAX_MSG_SIZE, file); // Read up to MAX_MSG_SIZE bytes from file into buf 1 byte at a time
         fclose(file);
-        int send = mq_send(mqd, fileBuffer, MAX_MSG_SIZE, 0); // Send up to MAX_MSG_SIZE number of bytes from buffer with prio 0 to the queue mqd
+
+        int send = mq_send(mqd, buf, MAX_MSG_SIZE, 0); // Send up to MAX_MSG_SIZE number of bytes from buffer with prio 0 to the queue mqd
         if (send < 0)
         {
             perror("Error sending message");
@@ -73,15 +75,15 @@ int main()
 
     else if (pid > 0)
     { /* parent process */
+        mqd = mq_open(Q_NAME, O_RDONLY | O_CREAT, MQ_MODE, &attr);
 
-        wait(NULL);
-        int rcv = mq_receive(mqd, msgBuffer, MAX_MSG_SIZE, NULL);
+        int rcv = mq_receive(mqd, buf, MAX_MSG_SIZE, NULL);
         if (rcv < 0)
         {
             perror("Error receiving message");
             exit(1);
         }
-        printf("%d\n", countWords(msgBuffer));
+        printf("%d\n", countWords(buf));
         mq_close(mqd);
         mq_unlink(Q_NAME);
         return 0;
