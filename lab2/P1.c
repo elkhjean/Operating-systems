@@ -46,7 +46,7 @@ int main(void)
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
     pthread_join(t3, NULL);
-
+    printf("Total buffer accesses: %d\n", buffer);
     pthread_mutex_destroy(&lock);
 
     return 0;
