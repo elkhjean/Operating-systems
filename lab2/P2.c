@@ -1,3 +1,5 @@
+// use flags -lrt and -lpthread when compiling
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>
