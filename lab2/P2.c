@@ -1,17 +1,19 @@
-// Link with -lrt -lpthrea
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 
-#define MAX 5
-int SIZE = sizeof(int) * 2;
-char *shm = "myshm";
+#define MAX 3
+#define SIZE (sizeof(struct shared_memory))
+
+const char *SHM_NAME = "myshm";
+const char *MUTEX_NAME = "/mutex";
+const char *RW_MUTEX_NAME = "/rw_mutex";
+
 sem_t *mutex, *rw_mutex;
 
 struct shared_memory
@@ -20,86 +22,92 @@ struct shared_memory
     int read_count;
 };
 
-void *reader_process(void *arg)
+/*
+    Reader_process function, first, locks the semaphore for the reader counter and updates it.
+    If it is the first reader to initialize a read, it locks the the rw semaphore for writing
+    and reads the value. If it is not the first reader, the variable is simply read, no new
+    lock is acquired since one already exits. The lock is maintained until the last reader
+    has read the variable. The lock is then released and writing is once again enabled.
+    */
+void reader_process(struct shared_memory *shared)
 {
-    struct shared_memory *shared = (struct shared_memory *)arg;
     do
     {
-        sem_wait(mutex);      // Protect read_count
-        shared->read_count++; // Increase reade_count
+        usleep(300);
+        sem_wait(mutex);
+        shared->read_count++;
         if (shared->read_count == 1)
-        {                       // If this is the FIRST reader
-            sem_wait(rw_mutex); // Waits to get access, Lock readWrite
+        {
+            sem_wait(rw_mutex);
             printf("The first reader acquires the lock\n");
         }
-        sem_post(mutex); // Release read_coount
+        sem_post(mutex);
 
-        printf("The reader (%d) reads the value %d\n", getpid(), shared->VAR); // read from to the shared object
-        sem_wait(mutex);                                                       // Lock reader to protect read_count
-        shared->read_count--;                                                  // Decrement read_count
+        printf("The reader (%d) reads the value %d\n", getpid(), shared->VAR);
+
+        sem_wait(mutex);
+        shared->read_count--;
         if (shared->read_count == 0)
-        {                       // If this is the LAST reader
-            sem_post(rw_mutex); //      Unlock readWrite
+        {
+            sem_post(rw_mutex);
             printf("The last reader releases the lock\n");
         }
-        sem_post(mutex); // Unlock reader, signal
-        usleep(3);
+        sem_post(mutex);
     } while (shared->VAR < MAX);
 }
-
-void *writer_process(void *arg)
+/* Writer_process function, locks read/write semaphore and writes to the shared variable VAR*/
+void writer_process(struct shared_memory *shared)
 {
-    struct shared_memory *shared = (struct shared_memory *)arg;
     do
     {
-        sem_wait(rw_mutex); // Lock readWrite
+        usleep(250);
+        sem_wait(rw_mutex);
         printf("The writer acquires the lock\n");
         shared->VAR++;
         printf("The writer (%d) writes the value %d\n", getpid(), shared->VAR);
-        sem_post(rw_mutex); // Unlock reaadWrite
+        sem_post(rw_mutex);
         printf("The writer releases the lock\n");
-        usleep(1);
     } while (shared->VAR < MAX);
 }
 
 int main(void)
 {
-
-    mutex = sem_open("/mutex", O_CREAT, 0644, 1);
-    rw_mutex = sem_open("/rw_mutex", O_CREAT, 0644, 1);
-
-    int fd = shm_open(shm, O_CREAT | O_RDWR, 0666);
+    // Initialization
+    mutex = sem_open(MUTEX_NAME, O_CREAT, 0644, 1);
+    rw_mutex = sem_open(RW_MUTEX_NAME, O_CREAT, 0644, 1);
+    int fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, SIZE);
-    struct shared_memory *shared = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+    struct shared_memory *shared = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     shared->read_count = 0;
     shared->VAR = 0;
 
-    pid_t pid1, pid2;
-
-    pid1 = fork();
+    // Forking
+    pid_t pid1 = fork();
     if (pid1 == 0)
-    { // child1
+    { // Child 1
         reader_process(shared);
+        return 0;
     }
-    else
-    {
-        pid2 = fork();
-        if (pid2 == 0)
-        { // child2
-            reader_process(shared);
-        }
-        else
-        { // parent
-            writer_process(shared);
-            wait(NULL);
-            wait(NULL);
-            munmap(shared, SIZE);
-            close(fd);
-            sem_close(mutex);
-            sem_close(rw_mutex);
-            sem_unlink("/mutex");
-            sem_unlink("/rw_mutex");
-        }
+    pid_t pid2 = fork();
+    if (pid2 == 0)
+    { // Child 2
+        reader_process(shared);
+        return 0;
     }
+
+    // Parent
+    writer_process(shared);
+    wait(NULL);
+    wait(NULL);
+
+    // Cleanup
+    munmap(shared, SIZE);
+    close(fd);
+    shm_unlink(SHM_NAME);
+    sem_close(mutex);
+    sem_close(rw_mutex);
+    sem_unlink(MUTEX_NAME);
+    sem_unlink(RW_MUTEX_NAME);
+
     return 0;
 }
