@@ -1,16 +1,28 @@
 #include <stdio.h>
 
-char testnumbers[] = {1, 256, 32768, 32769, 128, 65534, 33153};
-
 int main(int argc, char const *argv[])
 {
-    int len = sizeof(testnumbers);
-
-    for (size_t i = 0; i < len; i++)
+    FILE *file;
+    int num;
+    file = fopen("lab3_data/addresses.txt", "r");
+    if (file == NULL)
     {
-        testnumbers[i]
+        perror("Error opening file");
+        return -1;
     }
-    
-    
+
+    int pageNum;
+    int offset;
+
+    while (fscanf(file, "%d", &num) == 1)
+    {
+        offset = num & 0xFF;
+        pageNum = (num >> 8) & 0xFF;
+
+        printf("address: %d, Page number: %d, Page offset: %d\n", num, pageNum, offset);
+    }
+
+    fclose(file);
+
     return 0;
 }
