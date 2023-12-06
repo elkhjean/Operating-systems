@@ -81,6 +81,51 @@ void sstf(int initialPosition)
     }
     printf("SSTF: %d\n", calculateTotalHeadMovement(seq, initialPosition, sizeof(seq) / sizeof(seq[0])));
 }
+// Comparison function for qsort
+int compareIntegers(const void *a, const void *b)
+{
+    return (*(int *)a - *(int *)b);
+}
+
+// Function to reverse an array
+void reverseArray(int *array, size_t start, size_t end)
+{
+    while (start < end)
+    {
+        int temp = array[start];
+        array[start] = array[end];
+        array[end] = temp;
+        start++;
+        end--;
+    }
+}
+
+// Function to rotate an array based on a given value
+void rotateArray(int *array, size_t arraySize, int value)
+{
+    // Find the index where the value is located in the array
+    size_t index = 0;
+    while (index < arraySize && array[index] < value)
+    {
+        index++;
+    }
+
+    // If the value is found, reverse the two subarrays around the value
+    if (index < arraySize)
+    {
+        reverseArray(array, 0, index - 1);
+        reverseArray(array, index, arraySize - 1);
+        reverseArray(array, 0, arraySize - 1);
+    }
+}
+void printArray(int *array, size_t arraySize)
+{
+    for (size_t i = 0; i < arraySize; i++)
+    {
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+}
 
 // SCAN disk scheduling algorithm
 void scan(int initialPosition)
@@ -124,6 +169,18 @@ void scan(int initialPosition)
 // C-SCAN disk scheduling algorithm
 void cscan(int initialPosition)
 {
+    size_t size = sizeof(requests) / sizeof(requests[0]);
+    int sortedRequest[size + 2];
+    sortedRequest[0] = 0;
+    sortedRequest[size + 1] = MAX_CYLINDERS - 1;
+    qsort(requests, size, sizeof(int), compareIntegers);
+    for (size_t i = 0; i < size; i++)
+    {
+        sortedRequest[i + 1] = requests[i];
+    }
+    rotateArray(sortedRequest, size + 2, initialPosition);
+
+    printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
 }
 
 // LOOK disk scheduling algorithm
@@ -164,6 +221,17 @@ void look(int initialPosition)
 // C-LOOK disk scheduling algorithm
 void clook(int initialPosition)
 {
+    size_t size = sizeof(requests) / sizeof(requests[0]);
+    int sortedRequest[size];
+    for (size_t i = 0; i < size; i++)
+    {
+        sortedRequest[i] = requests[i];
+    }
+    qsort(sortedRequest, size, sizeof(int), compareIntegers);
+
+    rotateArray(sortedRequest, size, initialPosition);
+    printArray(sortedRequest, size);
+    printf("LOOK: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
 }
 
 // Calculates the total head movement for a given sequence of requests
