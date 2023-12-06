@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 // Macros
-#define MAX_CYLINDERS 5000
-#define REQUESTS 1000
+#define MAX_CYLINDERS 50
+#define REQUESTS 10
 
 // Global Variables
 int requests[REQUESTS]; // Array to hold the disk requests
@@ -19,8 +19,9 @@ void scan(int initialPosition);
 void cscan(int initialPosition);
 void look(int initialPosition);
 void clook(int initialPosition);
-int calculateTotalHeadMovement(int *sequence, int initialPosition);
+int calculateTotalHeadMovement(int *sequence, int initialPosition, int size);
 int findShortest(bool *processed, int currentPosition);
+int compareAscending(const void *a, const void *b);
 
 int main(int argc, char *argv[])
 {
@@ -62,7 +63,7 @@ void generateRequests()
 // FCFS (First Come First Served) disk scheduling algorithm
 void fcfs(int initialPosition)
 {
-    printf("FCFS: %d\n", calculateTotalHeadMovement(requests, initialPosition));
+    printf("FCFS: %d\n", calculateTotalHeadMovement(requests, initialPosition, REQUESTS));
 }
 
 // SSTF (Shortest Seek Time First) disk scheduling algorithm
@@ -78,12 +79,46 @@ void sstf(int initialPosition)
         currentPosition = requests[indexOfShortest];
         seq[i] = currentPosition;
     }
-    printf("SSTF: %d\n", calculateTotalHeadMovement(seq, initialPosition));
+    printf("SSTF: %d\n", calculateTotalHeadMovement(seq, initialPosition, sizeof(seq) / sizeof(seq[0])));
 }
 
 // SCAN disk scheduling algorithm
 void scan(int initialPosition)
 {
+    // Sort the requests in ascending order
+    int sortedRequests[REQUESTS];
+    for (size_t i = 0; i < REQUESTS; i++)
+    {
+        sortedRequests[i] = requests[i];
+    }
+    qsort(sortedRequests, REQUESTS, sizeof(int), compareAscending);
+
+    // Find where to split the array
+    int pivotIndex = 0;
+    while (pivotIndex < REQUESTS && sortedRequests[pivotIndex] < initialPosition)
+    {
+        pivotIndex++;
+    }
+
+    // Split array into higher and lower parts
+    int *seq = malloc((REQUESTS + 2) * sizeof(int));
+    int i, j;
+    for (i = 0; i < (REQUESTS - pivotIndex); i++)
+    {
+        seq[i] = sortedRequests[pivotIndex + i];
+    }
+    seq[i] = MAX_CYLINDERS - 1;
+    i++;
+    for (j = pivotIndex - 1; j >= 0; j--, i++)
+    {
+        seq[i] = sortedRequests[j];
+    }
+    i++;
+    seq[REQUESTS + 1] = 0;
+
+    // Count distance
+    printf("SCAN: %d\n", calculateTotalHeadMovement(seq, initialPosition, REQUESTS + 2));
+    free(seq);
 }
 
 // C-SCAN disk scheduling algorithm
@@ -94,6 +129,36 @@ void cscan(int initialPosition)
 // LOOK disk scheduling algorithm
 void look(int initialPosition)
 {
+    // Sort the requests in ascending order
+    int sortedRequests[REQUESTS];
+    for (size_t i = 0; i < REQUESTS; i++)
+    {
+        sortedRequests[i] = requests[i];
+    }
+    qsort(sortedRequests, REQUESTS, sizeof(int), compareAscending);
+
+    // Find where to split the array
+    int pivotIndex = 0;
+    while (pivotIndex < REQUESTS && sortedRequests[pivotIndex] < initialPosition)
+    {
+        pivotIndex++;
+    }
+
+    // Split array into higher and lower parts
+    int *seq = malloc((REQUESTS) * sizeof(int));
+    int i, j;
+    for (i = 0; i < (REQUESTS - pivotIndex); i++)
+    {
+        seq[i] = sortedRequests[pivotIndex + i];
+    }
+    for (j = pivotIndex - 1; j >= 0; j--, i++)
+    {
+        seq[i] = sortedRequests[j];
+    }
+
+    // Count distance
+    printf("LOOK: %d\n", calculateTotalHeadMovement(seq, initialPosition, REQUESTS));
+    free(seq);
 }
 
 // C-LOOK disk scheduling algorithm
@@ -102,21 +167,24 @@ void clook(int initialPosition)
 }
 
 // Calculates the total head movement for a given sequence of requests
-int calculateTotalHeadMovement(int *sequence, int initialPosition)
+int calculateTotalHeadMovement(int *sequence, int initialPosition, int size)
 {
     int headDistance = abs(sequence[0] - initialPosition);
-    for (int i = 0; i < (REQUESTS - 1); i++)
+    for (int i = 0; i < (size - 1); i++)
     {
+        printf("%d ", sequence[i]);
         headDistance += abs(sequence[i + 1] - sequence[i]);
     }
+    printf("%d ", sequence[size-1]);
     return headDistance;
 }
 
 // Finds index of shortest distance request
 int findShortest(bool *processed, int currentPosition)
 {
+    size_t size = sizeof(processed) / sizeof(processed[0]);
     int min = MAX_CYLINDERS, minIndex = 0;
-    for (int i = 0; i < REQUESTS; i++)
+    for (int i = 0; i < size; i++)
     {
         if (!processed[i] && abs(requests[i] - currentPosition) < min)
         {
@@ -125,4 +193,10 @@ int findShortest(bool *processed, int currentPosition)
         }
     }
     return minIndex;
+}
+
+// Comparison function for ascending order
+int compareAscending(const void *a, const void *b)
+{
+    return (*(int *)a - *(int *)b);
 }
