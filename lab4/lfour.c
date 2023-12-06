@@ -41,9 +41,9 @@ int main(int argc, char *argv[])
 
     fcfs(headPosition);
     sstf(headPosition);
-    // scan(headPosition);
+    scan(headPosition);
     cscan(headPosition);
-    // look(headPosition);
+    look(headPosition);
     clook(headPosition);
 
     return 0;
@@ -157,21 +157,14 @@ void clook(int initialPosition)
 {
     size_t size = sizeof(requests) / sizeof(requests[0]);
     int sortedRequest[size];
-
-    qsort(requests, size, sizeof(int), compareIntegers);
     for (size_t i = 0; i < size; i++)
     {
         sortedRequest[i] = requests[i];
     }
     qsort(sortedRequest, size, sizeof(int), compareIntegers);
-    int goToLAST = sortedRequest[size - 1];
-    if (goToLAST < MAX_CYLINDERS)
-        goToLAST = MAX_CYLINDERS - goToLAST;
-    int first = sortedRequest[0];
-    if (first == 0)
-    {
-    }
+
     rotateArray(sortedRequest, size, initialPosition);
+
     printf("LOOK: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
 }
 
