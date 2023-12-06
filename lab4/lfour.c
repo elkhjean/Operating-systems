@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 // Macros
-#define MAX_CYLINDERS 50
-#define REQUESTS 10
+#define MAX_CYLINDERS 5000
+#define REQUESTS 1000
 
 // Global Variables
 int requests[REQUESTS]; // Array to hold the disk requests
@@ -20,7 +20,7 @@ void cscan(int initialPosition);
 void look(int initialPosition);
 void clook(int initialPosition);
 int calculateTotalHeadMovement(int *sequence, int initialPosition, int size);
-int findShortest(bool *processed, int currentPosition);
+int findShortest(bool *processed, int currentPosition, int size);
 int compareAscending(const void *a, const void *b);
 
 int main(int argc, char *argv[])
@@ -74,7 +74,7 @@ void sstf(int initialPosition)
     int i = 0, currentPosition = initialPosition, indexOfShortest;
     for (int i = 0; i < REQUESTS; i++)
     {
-        indexOfShortest = findShortest(processed, currentPosition);
+        indexOfShortest = findShortest(processed, currentPosition, REQUESTS);
         processed[indexOfShortest] = true;
         currentPosition = requests[indexOfShortest];
         seq[i] = currentPosition;
@@ -180,7 +180,7 @@ void cscan(int initialPosition)
     }
     rotateArray(sortedRequest, size + 2, initialPosition);
 
-    printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition, size+2));
+    printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition, size + 2));
 }
 
 // LOOK disk scheduling algorithm
@@ -239,17 +239,16 @@ int calculateTotalHeadMovement(int *sequence, int initialPosition, int size)
     int headDistance = abs(sequence[0] - initialPosition);
     for (int i = 0; i < (size - 1); i++)
     {
-        printf("%d ", sequence[i]);
+  //      printf("%d ", sequence[i]);
         headDistance += abs(sequence[i + 1] - sequence[i]);
     }
-    printf("%d ", sequence[size-1]);
+  //  printf("%d ", sequence[size - 1]);
     return headDistance;
 }
 
 // Finds index of shortest distance request
-int findShortest(bool *processed, int currentPosition)
+int findShortest(bool *processed, int currentPosition, int size)
 {
-    size_t size = sizeof(processed) / sizeof(processed[0]);
     int min = MAX_CYLINDERS, minIndex = 0;
     for (int i = 0; i < size; i++)
     {
