@@ -180,7 +180,7 @@ void cscan(int initialPosition)
     }
     rotateArray(sortedRequest, size + 2, initialPosition);
 
-    printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
+    printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition, size+2));
 }
 
 // LOOK disk scheduling algorithm
@@ -230,8 +230,7 @@ void clook(int initialPosition)
     qsort(sortedRequest, size, sizeof(int), compareIntegers);
 
     rotateArray(sortedRequest, size, initialPosition);
-    printArray(sortedRequest, size);
-    printf("LOOK: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
+    printf("C-LOOK: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition, size));
 }
 
 // Calculates the total head movement for a given sequence of requests
