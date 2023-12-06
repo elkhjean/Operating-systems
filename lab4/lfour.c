@@ -143,7 +143,8 @@ void cscan(int initialPosition)
     {
         sortedRequest[i + 1] = requests[i];
     }
-    rotateArray(sortedRequest, size, initialPosition);
+    rotateArray(sortedRequest, size + 2, initialPosition);
+
     printf("CSCAN: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
 }
 
@@ -164,7 +165,7 @@ void clook(int initialPosition)
     qsort(sortedRequest, size, sizeof(int), compareIntegers);
 
     rotateArray(sortedRequest, size, initialPosition);
-
+    printArray(sortedRequest, size);
     printf("LOOK: %d\n", calculateTotalHeadMovement(sortedRequest, initialPosition));
 }
 
