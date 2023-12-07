@@ -28,6 +28,7 @@ Yes it has.
 
 Last, delete file3.txt.
 After you have done so, explain what happens when you attempt to edit file4.txt.
-I edited the contents of file3.txt with the following command: echo "edit file4 when file3 is removed"
+I edited the contents of file4.txt with the following command: echo "edit file4 when file3 is removed"
  >> file4.txt
 It created the file3.txt with the last edited content "edit file4 when file3 is removed"
+This is because the link still exists.
