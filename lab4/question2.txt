@@ -1,0 +1,33 @@
+What are the inode values of file1.txt and file2.txt?
+file1.txt: 80501843339250380 -rwxrwxrwx 2 s s 17 Dec  7 10:54 file1.txt
+file2.txt: 80501843339250380 -rwxrwxrwx 2 s s 17 Dec  7 10:54 file2.txt
+
+Are they the same or different?
+The are the same.
+
+Do the file have the same or different contents?
+The have the same content.
+
+After edited file2.txt the content of file1.txt and file2.txt are the same.
+Does file2.txt still exist as well?
+After removing file1, file2.txt still exist
+
+The strace command traces the execution of system calls as the command rm
+file2.txt is run. What system call is used for removing file2.txt?
+unlinkat(AT_FDCWD, "file2.txt", 0)      = 0
+
+After you have done so, obtain the inode numbers of file3.txt and file4.txt.
+file3: 93731167244655477 -rwxrwxrwx 1 s s 6 Dec  7 11:36 file3.txt
+file4: 5910974511526050 lrwxrwxrwx 1 s s 9 Dec  7 11:36 file4.txt -> file3.txt
+Are the inodes the same, or is each unique?
+The are unique.
+
+Next, edit the contents of file4.txt.
+Have the contents of file3.txt been altered as well?
+Yes it has.
+
+Last, delete file3.txt.
+After you have done so, explain what happens when you attempt to edit file4.txt.
+I edited the contents of file3.txt with the following command: echo "edit file4 when file3 is removed"
+ >> file4.txt
+It created the file3.txt with the last edited content "edit file4 when file3 is removed"
